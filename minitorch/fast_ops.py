@@ -343,7 +343,46 @@ def _tensor_matrix_multiply(
     b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
 
     # TODO: Implement for Task 3.2.
-    raise NotImplementedError("Need to implement for Task 3.2")
+    #raise NotImplementedError("Need to implement for Task 3.2")
+    out_batch_stride = out_strides[0] if len(out_shape) == 3 else 0
+
+    # Extract dimensions
+    batch_size = out_shape[0] if len(out_shape) == 3 else 1
+    m = out_shape[-2]  # Rows of the result
+    n = out_shape[-1]  # Columns of the result
+    k = a_shape[-1]  # Inner dimension
+
+    # Outer loop in parallel over batches and output matrix positions
+    for b in prange(batch_size):  # Iterate over batch
+        for i in range(m):  # Iterate over rows of the result
+            for j in range(n):  # Iterate over columns of the result
+                # Calculate the position in the output tensor
+                out_pos = (
+                    b * out_batch_stride + i * out_strides[-2] + j * out_strides[-1]
+                )
+
+                # Initialize accumulator for the dot product
+                result = 0.0
+
+                # Compute the dot product for the current position
+                for p in range(k):
+                    # Calculate positions in `a_storage` and `b_storage`
+                    a_pos = (
+                        b * a_batch_stride
+                        + i * a_strides[-2]
+                        + p * a_strides[-1]
+                    )
+                    b_pos = (
+                        b * b_batch_stride
+                        + p * b_strides[-2]
+                        + j * b_strides[-1]
+                    )
+
+                    # Perform multiplication and accumulate
+                    result += a_storage[a_pos] * b_storage[b_pos]
+
+                # Write the accumulated result to the output tensor
+                out[out_pos] = result
 
 
 tensor_matrix_multiply = njit(_tensor_matrix_multiply, parallel=True)
