@@ -222,7 +222,23 @@ def tensor_zip(
         b_strides: Strides,
     ) -> None:
         # TODO: Implement for Task 3.1.
-        raise NotImplementedError("Need to implement for Task 3.1")
+        isStrideAligned = (list(out_shape) == list(a_shape) == list(b_shape) and list(a_strides) == list(out_strides) == list(b_strides))
+        if isStrideAligned:
+            for i in prange(len(out)):
+                out[i] = fn(a_storage[i],b_storage[i])
+            return
+        else:
+            for i in prange(len(out)):
+                out_index: Index = np.zeros(MAX_DIMS, np.int32)
+                a_index: Index = np.zeros(MAX_DIMS, np.int32)
+                b_index: Index = np.zeros(MAX_DIMS,np.int32)
+                to_index(i, out_shape, out_index)
+                o = index_to_position(out_index, out_strides)
+                broadcast_index(out_index,out_shape,a_shape,a_index)
+                j = index_to_position(a_index, a_strides)
+                broadcast_index(out_index, out_shape, b_shape, b_index)
+                k = index_to_position(b_index, b_strides)
+                out[o] = fn(a_storage[j], b_storage[k])
 
     return njit(_zip, parallel=True)  # type: ignore
 
@@ -258,7 +274,24 @@ def tensor_reduce(
         reduce_dim: int,
     ) -> None:
         # TODO: Implement for Task 3.1.
-        raise NotImplementedError("Need to implement for Task 3.1")
+        
+        reduce_size = a_shape[reduce_dim]
+
+        for i in prange(len(out)):
+            out_index: Index = np.zeros(MAX_DIMS, np.int32)
+            to_index(i, out_shape, out_index)
+            o = index_to_position(out_index,out_strides)
+
+            result = out[o]
+            a_pos = index_to_position(out_index, a_strides)
+            # Perform the reduction along the specified dimension
+            for s in range(reduce_size):
+                result = fn(result, a_storage[a_pos])
+                a_pos += a_strides[reduce_dim]
+
+            # Write the final reduced value to `out`
+            out[o] = result
+
 
     return njit(_reduce, parallel=True)  # type: ignore
 
