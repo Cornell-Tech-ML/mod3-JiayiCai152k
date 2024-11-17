@@ -344,11 +344,9 @@ def tensor_reduce(
             to_index(out_pos, out_shape, out_index)
 
             # Accumulate values in the reduction dimension
-            for reduce_idx in range(pos, a_shape[reduce_dim], BLOCK_DIM):
-                local_index = out_index.copy()
-                local_index[reduce_dim] = reduce_idx
-                global_pos = index_to_position(local_index, a_strides)
-                cache[pos] = fn(cache[pos], a_storage[global_pos])
+            if pos < a_shape[reduce_dim]:
+                cache[pos] = a_storage[index_to_position(out_index, a_strides)]
+            cuda.syncthreads()
 
             # Synchronize threads before reduction
             cuda.syncthreads()
