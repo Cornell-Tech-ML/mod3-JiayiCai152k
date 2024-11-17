@@ -169,7 +169,20 @@ def tensor_map(
         in_strides: Strides,
     ) -> None:
         # TODO: Implement for Task 3.1.
-        raise NotImplementedError("Need to implement for Task 3.1")
+        isStrideAligned = (list(out_shape) == list(in_shape) and list(in_strides) == list(out_strides))
+        if isStrideAligned:
+            for i in prange(len(out)):
+                out[i] = fn(in_storage[i])
+            return
+        else:
+            for i in prange(len(out)):
+                out_index: Index = np.zeros(MAX_DIMS, np.int32)
+                in_index: Index = np.zeros(MAX_DIMS, np.int32)
+                to_index(i, out_shape, out_index)
+                broadcast_index(out_index, out_shape, in_shape, in_index)
+                o = index_to_position(out_index,out_strides)
+                j = index_to_position(in_index, in_strides)
+                out[o] = fn(in_storage[j])
 
     return njit(_map, parallel=True)  # type: ignore
 
