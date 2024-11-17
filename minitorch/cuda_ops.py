@@ -349,13 +349,12 @@ def tensor_reduce(
             cuda.syncthreads()
 
             # Synchronize threads before reduction
-            cuda.syncthreads()
 
             # Perform block-level reduction in shared memory
             stride = 1
             while stride < BLOCK_DIM:
                 if pos % (2 * stride) == 0 and pos + stride < BLOCK_DIM:
-                    cache[pos] += cache[pos + stride]
+                    cache[pos] = fn(cache[pos], cache[pos + stride])
                 cuda.syncthreads()
                 stride *= 2
 
