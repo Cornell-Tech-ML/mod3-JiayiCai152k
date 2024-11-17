@@ -333,7 +333,37 @@ def tensor_reduce(
         pos = cuda.threadIdx.x
 
         # TODO: Implement for Task 3.3.
-        raise NotImplementedError("Need to implement for Task 3.3")
+        #raise NotImplementedError("Need to implement for Task 3.3")
+
+        # Calculate the index in the output tensor
+        to_index(out_pos, out_shape, out_index)
+        global_out_pos = index_to_position(out_index, out_strides)
+
+        # Initialize the accumulator with the neutral reduction value
+        accumulator = reduce_value
+
+        # Perform reduction across the specified dimension
+        for reduce_idx in range(pos, a_shape[reduce_dim], BLOCK_DIM):
+            in_index = out_index.copy()
+            in_index[reduce_dim] = reduce_idx
+            global_in_pos = index_to_position(in_index, a_strides)
+            accumulator = fn(accumulator, a_storage[global_in_pos])
+
+        # Store the local accumulation in shared memory
+        cache[pos] = accumulator
+        cuda.syncthreads()
+
+        # Perform reduction within the block
+        stride = 1
+        while stride < BLOCK_DIM:
+            if pos % (2 * stride) == 0 and pos + stride < BLOCK_DIM:
+                cache[pos] = fn(cache[pos], cache[pos + stride])
+            cuda.syncthreads()
+            stride *= 2
+
+        # Write the final reduced result to the output tensor
+        if pos == 0:
+            out[global_out_pos] = cache[0]
 
     return jit(_reduce)  # type: ignore
 
