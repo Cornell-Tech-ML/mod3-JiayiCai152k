@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from .tensor import Tensor
     from .tensor_data import Shape, Storage, Strides
 
+MAX_DIMS = 32
 
 class MapProto(Protocol):
     def __call__(self, x: Tensor, out: Optional[Tensor] = ..., /) -> Tensor:

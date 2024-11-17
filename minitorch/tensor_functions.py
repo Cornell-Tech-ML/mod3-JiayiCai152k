@@ -266,7 +266,6 @@ class Permute(Function):
 class View(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, shape: Tensor) -> Tensor:
-        """Perform the forward pass."""
         ctx.save_for_backward(a.shape)
         assert a._tensor.is_contiguous(), "Must be contiguous to view"
         shape2 = [int(shape[i]) for i in range(shape.size)]
@@ -279,7 +278,7 @@ class View(Function):
         """Matrix Multiply backward (module 3)"""
         (original,) = ctx.saved_values
         return (
-            Tensor.make(
+            minitorch.Tensor.make(
                 grad_output._tensor._storage, original, backend=grad_output.backend
             ),
             0.0,

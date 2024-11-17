@@ -5,7 +5,10 @@ import interface.plots as plots
 import networkx as nx
 import pandas as pd
 import plotly.graph_objects as go
+from pathlib import Path
+import sys
 import streamlit as st
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 import minitorch
 
