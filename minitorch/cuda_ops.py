@@ -335,35 +335,39 @@ def tensor_reduce(
         # TODO: Implement for Task 3.3.
         #raise NotImplementedError("Need to implement for Task 3.3")
 
-        # Calculate the index in the output tensor
-        to_index(out_pos, out_shape, out_index)
-        global_out_pos = index_to_position(out_index, out_strides)
+        # Initialize cache with the reduction value
+        cache[pos] = reduce_value
 
-        # Initialize the accumulator with the neutral reduction value
-        accumulator = reduce_value
+        # Ensure we don't exceed the output size
+        if out_pos < out_size:
+            # Convert output position to multi-dimensional index
+            to_index(out_pos, out_shape, out_index)
 
-        # Perform reduction across the specified dimension
-        for reduce_idx in range(pos, a_shape[reduce_dim], BLOCK_DIM):
-            in_index = out_index.copy()
-            in_index[reduce_dim] = reduce_idx
-            global_in_pos = index_to_position(in_index, a_strides)
-            accumulator = fn(accumulator, a_storage[global_in_pos])
+            # Accumulate values in the reduction dimension
+            for reduce_idx in range(pos, a_shape[reduce_dim], BLOCK_DIM):
+                local_index = out_index.copy()
+                local_index[reduce_dim] = reduce_idx
+                global_pos = index_to_position(local_index, a_strides)
+                cache[pos] = fn(cache[pos], a_storage[global_pos])
 
-        # Store the local accumulation in shared memory
-        cache[pos] = accumulator
-        cuda.syncthreads()
-
-        # Perform reduction within the block
-        stride = 1
-        while stride < BLOCK_DIM:
-            if pos % (2 * stride) == 0 and pos + stride < BLOCK_DIM:
-                cache[pos] = fn(cache[pos], cache[pos + stride])
+            # Synchronize threads before reduction
             cuda.syncthreads()
-            stride *= 2
 
-        # Write the final reduced result to the output tensor
-        if pos == 0:
-            out[global_out_pos] = cache[0]
+            # Perform block-level reduction in shared memory
+            stride = 1
+            while stride < BLOCK_DIM:
+                if pos % (2 * stride) == 0 and pos + stride < BLOCK_DIM:
+                    cache[pos] += cache[pos + stride]
+                cuda.syncthreads()
+                stride *= 2
+
+            # Write the final reduced value to the output tensor
+            if pos == 0:
+                #global_out_pos = index_to_position(out_index, out_strides)
+                out[out_pos] = cache[0]
+
+        
+
 
     return jit(_reduce)  # type: ignore
 
@@ -401,7 +405,49 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     """
     BLOCK_DIM = 32
     # TODO: Implement for Task 3.3.
-    raise NotImplementedError("Need to implement for Task 3.3")
+    #raise NotImplementedError("Need to implement for Task 3.3")
+     # Shared memory for storing tiles of A and B
+    a_shared = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
+    b_shared = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
+
+    # Calculate the row and column index of the element
+    row = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
+    col = cuda.blockIdx.y * cuda.blockDim.y + cuda.threadIdx.y
+
+    # Local thread indices within the block
+    local_row = cuda.threadIdx.x
+    local_col = cuda.threadIdx.y
+
+    # Accumulator for the result
+    result = 0.0
+
+    # Loop over all tiles
+    for tile_idx in range((size + BLOCK_DIM - 1) // BLOCK_DIM):
+        # Load a tile of A into shared memory
+        if row < size and tile_idx * BLOCK_DIM + local_col < size:
+            a_shared[local_row, local_col] = a[row * size + (tile_idx * BLOCK_DIM + local_col)]
+        else:
+            a_shared[local_row, local_col] = 0.0
+
+        # Load a tile of B into shared memory
+        if col < size and tile_idx * BLOCK_DIM + local_row < size:
+            b_shared[local_row, local_col] = b[(tile_idx * BLOCK_DIM + local_row) * size + col]
+        else:
+            b_shared[local_row, local_col] = 0.0
+
+        # Synchronize to ensure tiles are loaded
+        cuda.syncthreads()
+
+        # Compute partial results within this tile
+        for k in range(BLOCK_DIM):
+            result += a_shared[local_row, k] * b_shared[k, local_col]
+
+        # Synchronize before loading the next tile
+        cuda.syncthreads()
+
+    # Write the result to global memory
+    if row < size and col < size:
+        out[row * size + col] = result
 
 
 jit_mm_practice = jit(_mm_practice)
