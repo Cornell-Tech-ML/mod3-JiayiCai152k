@@ -344,10 +344,10 @@ def _tensor_matrix_multiply(
 
     # TODO: Implement for Task 3.2.
     #raise NotImplementedError("Need to implement for Task 3.2")
-    out_batch_stride = out_strides[0] if len(out_shape) == 3 else 0
+    out_batch_stride = out_strides[0]
 
     # Extract dimensions
-    batch_size = out_shape[0] if len(out_shape) == 3 else 1
+    batch_size = out_shape[0]
     m = out_shape[-2]  # Rows of the result
     n = out_shape[-1]  # Columns of the result
     k = a_shape[-1]  # Inner dimension
