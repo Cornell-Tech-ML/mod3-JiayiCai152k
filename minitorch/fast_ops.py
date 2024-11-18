@@ -170,7 +170,9 @@ def tensor_map(
         in_strides: Strides,
     ) -> None:
         # TODO: Implement for Task 3.1.
-        isStrideAligned = (list(out_shape) == list(in_shape) and list(in_strides) == list(out_strides))
+        isStrideAligned = list(out_shape) == list(in_shape) and list(
+            in_strides
+        ) == list(out_strides)
         if isStrideAligned:
             for i in prange(len(out)):
                 out[i] = fn(in_storage[i])
@@ -181,7 +183,7 @@ def tensor_map(
                 in_index: Index = np.zeros(MAX_DIMS, np.int32)
                 to_index(i, out_shape, out_index)
                 broadcast_index(out_index, out_shape, in_shape, in_index)
-                o = index_to_position(out_index,out_strides)
+                o = index_to_position(out_index, out_strides)
                 j = index_to_position(in_index, in_strides)
                 out[o] = fn(in_storage[j])
 
@@ -223,19 +225,21 @@ def tensor_zip(
         b_strides: Strides,
     ) -> None:
         # TODO: Implement for Task 3.1.
-        isStrideAligned = (list(out_shape) == list(a_shape) == list(b_shape) and list(a_strides) == list(out_strides) == list(b_strides))
+        isStrideAligned = list(out_shape) == list(a_shape) == list(b_shape) and list(
+            a_strides
+        ) == list(out_strides) == list(b_strides)
         if isStrideAligned:
             for i in prange(len(out)):
-                out[i] = fn(a_storage[i],b_storage[i])
+                out[i] = fn(a_storage[i], b_storage[i])
             return
         else:
             for i in prange(len(out)):
                 out_index: Index = np.zeros(MAX_DIMS, np.int32)
                 a_index: Index = np.zeros(MAX_DIMS, np.int32)
-                b_index: Index = np.zeros(MAX_DIMS,np.int32)
+                b_index: Index = np.zeros(MAX_DIMS, np.int32)
                 to_index(i, out_shape, out_index)
                 o = index_to_position(out_index, out_strides)
-                broadcast_index(out_index,out_shape,a_shape,a_index)
+                broadcast_index(out_index, out_shape, a_shape, a_index)
                 j = index_to_position(a_index, a_strides)
                 broadcast_index(out_index, out_shape, b_shape, b_index)
                 k = index_to_position(b_index, b_strides)
@@ -275,13 +279,13 @@ def tensor_reduce(
         reduce_dim: int,
     ) -> None:
         # TODO: Implement for Task 3.1.
-        
+
         reduce_size = a_shape[reduce_dim]
 
         for i in prange(len(out)):
             out_index: Index = np.zeros(MAX_DIMS, np.int32)
             to_index(i, out_shape, out_index)
-            o = index_to_position(out_index,out_strides)
+            o = index_to_position(out_index, out_strides)
 
             result = out[o]
             a_pos = index_to_position(out_index, a_strides)
@@ -292,7 +296,6 @@ def tensor_reduce(
 
             # Write the final reduced value to `out`
             out[o] = result
-
 
     return njit(_reduce, parallel=True)  # type: ignore
 
@@ -344,7 +347,7 @@ def _tensor_matrix_multiply(
     b_batch_stride = b_strides[0] if b_shape[0] > 1 else 0
 
     # TODO: Implement for Task 3.2.
-    #raise NotImplementedError("Need to implement for Task 3.2")
+    # raise NotImplementedError("Need to implement for Task 3.2")
     out_batch_stride = out_strides[0]
 
     # Extract dimensions
@@ -368,16 +371,8 @@ def _tensor_matrix_multiply(
                 # Compute the dot product for the current position
                 for p in range(k):
                     # Calculate positions in `a_storage` and `b_storage`
-                    a_pos = (
-                        b * a_batch_stride
-                        + i * a_strides[-2]
-                        + p * a_strides[-1]
-                    )
-                    b_pos = (
-                        b * b_batch_stride
-                        + p * b_strides[-2]
-                        + j * b_strides[-1]
-                    )
+                    a_pos = b * a_batch_stride + i * a_strides[-2] + p * a_strides[-1]
+                    b_pos = b * b_batch_stride + p * b_strides[-2] + j * b_strides[-1]
 
                     # Perform multiplication and accumulate
                     result += a_storage[a_pos] * b_storage[b_pos]

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import random
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -127,8 +127,8 @@ class Mul(Function):
         """Perform the backward pass."""
         t1, t2 = ctx.saved_values
         return (
-            grad_output.f.mul_zip(t2,  grad_output),
-            grad_output.f.mul_zip(t1,  grad_output)
+            grad_output.f.mul_zip(t2, grad_output),
+            grad_output.f.mul_zip(t1, grad_output),
         )
 
 
@@ -235,6 +235,7 @@ class EQ(Function):
         a_shape, b_shape = ctx.saved_values
         return zeros(a_shape), zeros(b_shape)
 
+
 class IsClose(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor, t2: Tensor) -> Tensor:
@@ -253,7 +254,7 @@ class Permute(Function):
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
         """Perform the backward pass by applying the inverse of the forward permutation."""
         # Retrieve the saved permutation order
-        order:Tensor = ctx.saved_values[0]
+        order: Tensor = ctx.saved_values[0]
         order2: List[int] = [
             a[0]
             for a in sorted(

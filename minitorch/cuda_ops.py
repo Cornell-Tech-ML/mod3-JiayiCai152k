@@ -179,7 +179,7 @@ def tensor_map(
         in_index = cuda.local.array(MAX_DIMS, numba.int32)
         i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
         # TODO: Implement for Task 3.3.
-        #raise NotImplementedError("Need to implement for Task 3.3")
+        # raise NotImplementedError("Need to implement for Task 3.3")
         if i < out_size:
             to_index(i, out_shape, out_index)
             broadcast_index(out_index, out_shape, in_shape, in_index)
@@ -228,7 +228,7 @@ def tensor_zip(
         i = cuda.blockIdx.x * cuda.blockDim.x + cuda.threadIdx.x
 
         # TODO: Implement for Task 3.3.
-        #raise NotImplementedError("Need to implement for Task 3.3")
+        # raise NotImplementedError("Need to implement for Task 3.3")
         if i < out_size:
             to_index(i, out_shape, out_index)
             broadcast_index(out_index, out_shape, a_shape, a_index)
@@ -269,7 +269,7 @@ def _sum_practice(out: Storage, a: Storage, size: int) -> None:
     pos = cuda.threadIdx.x
 
     # TODO: Implement for Task 3.3.
-    #raise NotImplementedError("Need to implement for Task 3.3")
+    # raise NotImplementedError("Need to implement for Task 3.3")
     # Initialize shared memory
     cache[pos] = 0.0
     if i < size:
@@ -339,7 +339,7 @@ def tensor_reduce(
         pos = cuda.threadIdx.x
 
         # TODO: Implement for Task 3.3.
-        #raise NotImplementedError("Need to implement for Task 3.3")
+        # raise NotImplementedError("Need to implement for Task 3.3")
 
         # Initialize cache with the reduction value
         cache[pos] = reduce_value
@@ -370,11 +370,8 @@ def tensor_reduce(
 
             # Write the final reduced value to the output tensor
             if pos == 0:
-                #global_out_pos = index_to_position(out_index, out_strides)
+                # global_out_pos = index_to_position(out_index, out_strides)
                 out[out_pos] = cache[0]
-
-        
-
 
     return jit(_reduce)  # type: ignore
 
@@ -412,8 +409,8 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     """  # noqa: D404
     BLOCK_DIM = 32
     # TODO: Implement for Task 3.3.
-    #raise NotImplementedError("Need to implement for Task 3.3")
-     # Shared memory for storing tiles of A and B
+    # raise NotImplementedError("Need to implement for Task 3.3")
+    # Shared memory for storing tiles of A and B
     a_shared = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
     b_shared = cuda.shared.array((BLOCK_DIM, BLOCK_DIM), numba.float64)
 
@@ -432,13 +429,17 @@ def _mm_practice(out: Storage, a: Storage, b: Storage, size: int) -> None:
     for tile_idx in range((size + BLOCK_DIM - 1) // BLOCK_DIM):
         # Load a tile of A into shared memory
         if row < size and tile_idx * BLOCK_DIM + local_col < size:
-            a_shared[local_row, local_col] = a[row * size + (tile_idx * BLOCK_DIM + local_col)]
+            a_shared[local_row, local_col] = a[
+                row * size + (tile_idx * BLOCK_DIM + local_col)
+            ]
         else:
             a_shared[local_row, local_col] = 0.0
 
         # Load a tile of B into shared memory
         if col < size and tile_idx * BLOCK_DIM + local_row < size:
-            b_shared[local_row, local_col] = b[(tile_idx * BLOCK_DIM + local_row) * size + col]
+            b_shared[local_row, local_col] = b[
+                (tile_idx * BLOCK_DIM + local_row) * size + col
+            ]
         else:
             b_shared[local_row, local_col] = 0.0
 
@@ -524,7 +525,7 @@ def _tensor_matrix_multiply(
     #    b) Copy into shared memory for b matrix
     #    c) Compute the dot produce for position c[i, j]
     # TODO: Implement for Task 3.4.
-    #raise NotImplementedError("Need to implement for Task 3.4")
+    # raise NotImplementedError("Need to implement for Task 3.4")
     result = 0.0
 
     # Loop through the tiles of the matrices
@@ -532,9 +533,9 @@ def _tensor_matrix_multiply(
         # Load a tile of A into shared memory
         if i < a_shape[-2] and tile_idx * BLOCK_DIM + pj < a_shape[-1]:
             a_shared[pi, pj] = a_storage[
-                batch * a_batch_stride +
-                i * a_strides[-2] +
-                (tile_idx * BLOCK_DIM + pj) * a_strides[-1]
+                batch * a_batch_stride
+                + i * a_strides[-2]
+                + (tile_idx * BLOCK_DIM + pj) * a_strides[-1]
             ]
         else:
             a_shared[pi, pj] = 0.0
@@ -542,9 +543,9 @@ def _tensor_matrix_multiply(
         # Load a tile of B into shared memory
         if j < b_shape[-1] and tile_idx * BLOCK_DIM + pi < b_shape[-2]:
             b_shared[pi, pj] = b_storage[
-                batch * b_batch_stride +
-                (tile_idx * BLOCK_DIM + pi) * b_strides[-2] +
-                j * b_strides[-1]
+                batch * b_batch_stride
+                + (tile_idx * BLOCK_DIM + pi) * b_strides[-2]
+                + j * b_strides[-1]
             ]
         else:
             b_shared[pi, pj] = 0.0
@@ -561,11 +562,7 @@ def _tensor_matrix_multiply(
 
     # Write the result to global memory
     if i < out_shape[-2] and j < out_shape[-1]:
-        out[
-            batch * out_strides[0] +
-            i * out_strides[-2] +
-            j * out_strides[-1]
-        ] = result
+        out[batch * out_strides[0] + i * out_strides[-2] + j * out_strides[-1]] = result
 
 
 tensor_matrix_multiply = jit(_tensor_matrix_multiply)

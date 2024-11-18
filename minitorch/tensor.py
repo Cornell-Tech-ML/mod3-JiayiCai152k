@@ -364,7 +364,7 @@ class Tensor:
     def sum(self, dim: Optional[int] = None) -> Tensor:
         """Return the sum of elements along a specified dimension or over all elements."""
         if dim is None:
-            return Sum.apply(self.contiguous().view(self.size),self._ensure_tensor(0))
+            return Sum.apply(self.contiguous().view(self.size), self._ensure_tensor(0))
         else:
             return Sum.apply(self, self._ensure_tensor(dim))
 
@@ -377,13 +377,13 @@ class Tensor:
 
     def permute(self, *order: int) -> Tensor:
         """Return a tensor with its dimensions permuted in the given order."""
-        #order_tensor = tensor(list(order), backend=self.backend)
+        # order_tensor = tensor(list(order), backend=self.backend)
         return Permute.apply(self, tensor(list(order)))
 
     def view(self, *shape: int) -> Tensor:
         """Reshape the tensor to the specified shape."""
-        #new_shape = list(shape)
-        #shape_tensor = tensor(new_shape, backend=self.backend)
+        # new_shape = list(shape)
+        # shape_tensor = tensor(new_shape, backend=self.backend)
         return View.apply(self, tensor(list(shape)))
 
     def zero_grad_(self) -> None:

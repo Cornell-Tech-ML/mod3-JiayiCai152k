@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable, Optional, Type
 
 import numpy as np
-from numpy._core.defchararray import index
 from typing_extensions import Protocol
 
 from . import operators
@@ -19,6 +18,7 @@ if TYPE_CHECKING:
     from .tensor_data import Shape, Storage, Strides
 
 MAX_DIMS = 32
+
 
 class MapProto(Protocol):
     def __call__(self, x: Tensor, out: Optional[Tensor] = ..., /) -> Tensor:
@@ -280,7 +280,7 @@ def tensor_map(
         for i in range(len(out)):
             to_index(i, out_shape, out_index)
             broadcast_index(out_index, out_shape, in_shape, in_index)
-            o = index_to_position(out_index,out_strides)
+            o = index_to_position(out_index, out_strides)
             j = index_to_position(in_index, in_strides)
             out[o] = fn(in_storage[j])
 
@@ -332,11 +332,11 @@ def tensor_zip(
         # raise NotImplementedError("Need to implement for Task 2.3")
         out_index = np.zeros(MAX_DIMS, np.int32)
         a_index = np.zeros(MAX_DIMS, np.int32)
-        b_index = np.zeros(MAX_DIMS,np.int32)
+        b_index = np.zeros(MAX_DIMS, np.int32)
         for i in range(len(out)):
             to_index(i, out_shape, out_index)
             o = index_to_position(out_index, out_strides)
-            broadcast_index(out_index,out_shape,a_shape,a_index)
+            broadcast_index(out_index, out_shape, a_shape, a_index)
             j = index_to_position(a_index, a_strides)
             broadcast_index(out_index, out_shape, b_shape, b_index)
             k = index_to_position(b_index, b_strides)
@@ -378,10 +378,10 @@ def tensor_reduce(
         reduce_size = a_shape[reduce_dim]
         for i in range(len(out)):
             to_index(i, out_shape, out_index)
-            o = index_to_position(out_index,out_strides)
+            o = index_to_position(out_index, out_strides)
             for s in range(reduce_size):
                 out_index[reduce_dim] = s
-                j = index_to_position(out_index,a_strides)
+                j = index_to_position(out_index, a_strides)
                 out[o] = fn(out[o], a_storage[j])
 
     return _reduce
