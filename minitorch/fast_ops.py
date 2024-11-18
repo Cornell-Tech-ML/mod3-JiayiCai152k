@@ -30,6 +30,7 @@ Fn = TypeVar("Fn")
 
 
 def njit(fn: Fn, **kwargs: Any) -> Fn:
+    """Applies non-JIT compilation to the given function with forced inlining."""
     return _njit(inline="always", **kwargs)(fn)  # type: ignore
 
 
