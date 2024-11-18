@@ -377,4 +377,9 @@ def test_bmm(backend: str, data: DataObject) -> None:
         .sum(2)
         .view(D, A, C)
     )
+    print("Tensor c (Result of a @ b):")
+    print(c)
+
+    print("\nTensor c2 (Manually Computed Result):")
+    print(c2)
     assert_close_tensor(c, c2)
