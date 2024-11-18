@@ -68,9 +68,9 @@ def max(a: float, b: float) -> float:
     return a if a > b else b
 
 
-def is_close(a: float, b: float, tol: float = 1e-2) -> float:
+def is_close(a: float, b: float) -> float:
     """Checks if two numbers are close in value."""
-    return abs(a - b) < tol
+    return (a - b < 1e-2) and (b - a < 1e-2)
 
 
 def sigmoid(a: float) -> float:
@@ -106,7 +106,7 @@ def inv(a: float) -> float:
     """Calculates the reciprocal"""
     # if a == 0:
     #    raise ZeroDivisionError("Cannot calculate reciprocal of zero")
-    return 1 / a
+    return 1.0 / a
 
 
 def log_back(a: float, b: float) -> float:

@@ -382,5 +382,5 @@ def test_bmm(backend: str, data: DataObject) -> None:
 
     print("\nTensor c2 (Manually Computed Result):")
     print(c2)
-    #assert_close_tensor(c, c2)
-    assert_close_tensor(c2, c2)
+    assert_close_tensor(c, c2)
+    #assert_close_tensor(c2, c2)
